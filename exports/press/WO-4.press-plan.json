@@ -1,0 +1,152 @@
+{
+  "capacity": 2,
+  "edition_catalog_revision": 1,
+  "edition_id": "ED1",
+  "edition_layout_digest": "sha256:8645de61fbcf6019a8917ddac412fc04ab36a149e460fdee6f4e58c1c7362147",
+  "first_infeasible_round": null,
+  "format": "press-plan/1",
+  "infeasible": null,
+  "initial_rack": [],
+  "mount_costs": {
+    "sig0/sheet0/back": 5,
+    "sig0/sheet0/front": 1,
+    "sig0/sheet1/back": 1,
+    "sig0/sheet1/front": 1
+  },
+  "order_id": "WO-4",
+  "plan_digest": "sha256:d904fa0aeb068b833d7c896fdbaeec1fc945d649c71213cb1dd3e12d413288b6",
+  "planned_at_catalog_revision": 2,
+  "retentions": [],
+  "rounds": [
+    {
+      "citations": [
+        "C_A1"
+      ],
+      "cumulative_cost": 5,
+      "mounted": [
+        {
+          "cost": 5,
+          "side": "sig0/sheet0/back"
+        }
+      ],
+      "on_rack": [
+        "sig0/sheet0/back"
+      ],
+      "resolution": {
+        "pages": [
+          {
+            "page_id": "p2",
+            "volume_id": "BOOK"
+          }
+        ],
+        "required_sides": [
+          "sig0/sheet0/back"
+        ],
+        "status": "ok"
+      },
+      "retained_sides": [],
+      "round": 1,
+      "round_cost": 5,
+      "unmounted_after": []
+    },
+    {
+      "citations": [
+        "C_B"
+      ],
+      "cumulative_cost": 6,
+      "mounted": [
+        {
+          "cost": 1,
+          "side": "sig0/sheet0/front"
+        }
+      ],
+      "on_rack": [
+        "sig0/sheet0/back",
+        "sig0/sheet0/front"
+      ],
+      "resolution": {
+        "pages": [
+          {
+            "page_id": "p8",
+            "volume_id": "BOOK"
+          }
+        ],
+        "required_sides": [
+          "sig0/sheet0/front"
+        ],
+        "status": "ok"
+      },
+      "retained_sides": [],
+      "round": 2,
+      "round_cost": 1,
+      "unmounted_after": [
+        "sig0/sheet0/front"
+      ]
+    },
+    {
+      "citations": [
+        "C_C"
+      ],
+      "cumulative_cost": 7,
+      "mounted": [
+        {
+          "cost": 1,
+          "side": "sig0/sheet1/front"
+        }
+      ],
+      "on_rack": [
+        "sig0/sheet0/back",
+        "sig0/sheet1/front"
+      ],
+      "resolution": {
+        "pages": [
+          {
+            "page_id": "p6",
+            "volume_id": "BOOK"
+          }
+        ],
+        "required_sides": [
+          "sig0/sheet1/front"
+        ],
+        "status": "ok"
+      },
+      "retained_sides": [],
+      "round": 3,
+      "round_cost": 1,
+      "unmounted_after": [
+        "sig0/sheet1/front"
+      ]
+    },
+    {
+      "citations": [
+        "C_A2"
+      ],
+      "cumulative_cost": 7,
+      "mounted": [],
+      "on_rack": [
+        "sig0/sheet0/back"
+      ],
+      "resolution": {
+        "pages": [
+          {
+            "page_id": "p7",
+            "volume_id": "BOOK"
+          }
+        ],
+        "required_sides": [
+          "sig0/sheet0/back"
+        ],
+        "status": "ok"
+      },
+      "retained_sides": [],
+      "round": 4,
+      "round_cost": 0,
+      "unmounted_after": [
+        "sig0/sheet0/back"
+      ]
+    }
+  ],
+  "status": "feasible",
+  "total_cost": 7,
+  "volume_id": "BOOK"
+}

@@ -26,6 +26,8 @@ from typing import Any
 
 from . import export
 from .catalog import Catalog
+from .imposition import ImpositionStore
+from .press import PressPlanner, replay_plan, write_edition_atomic, write_plan_atomic
 from .repository import CitationRepository
 
 
@@ -245,6 +247,112 @@ def _error_dict(exc: BaseException) -> dict[str, Any]:
     return {"code": exc.__class__.__name__, "message": str(exc)}
 
 
+# ----------------------------------------------------------------------
+# signature editions (书帖版) and errata work orders (勘误工单)
+# ----------------------------------------------------------------------
+def cmd_make_edition(args: argparse.Namespace) -> int:
+    catalog = _open_existing(args.db)
+    try:
+        store = ImpositionStore(catalog)
+        edition = store.create_edition(
+            args.volume_id,
+            args.signature_size,
+            edition_id=args.edition_id,
+            expected_revision=args.expected_revision,
+        )
+        out = edition.as_dict()
+    finally:
+        catalog.close()
+    print(json.dumps(out, ensure_ascii=False))
+    return 0
+
+
+def cmd_copy_edition(args: argparse.Namespace) -> int:
+    catalog = _open_existing(args.db)
+    try:
+        store = ImpositionStore(catalog)
+        edition = store.copy_edition(args.source_edition_id, edition_id=args.edition_id)
+        out = edition.as_dict()
+    finally:
+        catalog.close()
+    print(json.dumps(out, ensure_ascii=False))
+    return 0
+
+
+def cmd_editions(args: argparse.Namespace) -> int:
+    catalog = _open_existing(args.db)
+    try:
+        store = ImpositionStore(catalog)
+        out = [e.as_dict() for e in store.editions(args.volume_id)]
+    finally:
+        catalog.close()
+    print(json.dumps(out, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_show_edition(args: argparse.Namespace) -> int:
+    catalog = _open_existing(args.db)
+    try:
+        store = ImpositionStore(catalog)
+        out = store.export_edition(args.edition_id)
+    finally:
+        catalog.close()
+    print(json.dumps(out, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_locate_page(args: argparse.Namespace) -> int:
+    catalog = _open_existing(args.db)
+    try:
+        store = ImpositionStore(catalog)
+        slot = store.locate_page(args.edition_id, args.page_id)
+        out = {"edition_id": args.edition_id, **slot.as_dict()}
+    finally:
+        catalog.close()
+    print(json.dumps(out, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_export_edition(args: argparse.Namespace) -> int:
+    catalog = _open_existing(args.db)
+    try:
+        store = ImpositionStore(catalog)
+        document = store.export_edition(args.edition_id)
+    finally:
+        catalog.close()
+    write_edition_atomic(document, args.out)
+    print(json.dumps({"edition_id": document["edition_id"], "out": args.out},
+                     ensure_ascii=False))
+    return 0
+
+
+def cmd_plan_press(args: argparse.Namespace) -> int:
+    catalog = _open_existing(args.db)
+    try:
+        planner = PressPlanner(catalog)
+        plan = planner.plan(_read_json(args.order))
+    finally:
+        catalog.close()
+    write_plan_atomic(plan, args.out)
+    print(json.dumps({
+        "order_id": plan["order_id"],
+        "status": plan["status"],
+        "total_cost": plan["total_cost"],
+        "first_infeasible_round": plan["first_infeasible_round"],
+        "plan_digest": plan["plan_digest"],
+        "out": args.out,
+    }, ensure_ascii=False))
+    return 0
+
+
+def cmd_replay_plan(args: argparse.Namespace) -> int:
+    """Offline: needs only the plan and the exported edition documents."""
+
+    verdict = replay_plan(_read_json(args.plan), _read_json(args.edition))
+    print(json.dumps(verdict, ensure_ascii=False, indent=2))
+    return 0 if verdict["valid"] else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="citation_system")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -292,6 +400,54 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--volume", dest="volume_id", required=True)
     p.add_argument("--page", dest="page_id", required=True)
     p.set_defaults(func=cmd_referrers)
+
+    p = sub.add_parser("make-edition", help="bind the current catalog revision "
+                                            "into a signature edition (书帖版)")
+    p.add_argument("--db", required=True)
+    p.add_argument("--volume", dest="volume_id", required=True)
+    p.add_argument("--signature-size", type=int, required=True, choices=(4, 8))
+    p.add_argument("--edition-id")
+    p.add_argument("--expected-revision", type=int)
+    p.set_defaults(func=cmd_make_edition)
+
+    p = sub.add_parser("copy-edition", help="reprint (复印) an old edition")
+    p.add_argument("--db", required=True)
+    p.add_argument("--source-edition", dest="source_edition_id", required=True)
+    p.add_argument("--edition-id", required=True)
+    p.set_defaults(func=cmd_copy_edition)
+
+    p = sub.add_parser("editions", help="list signature editions")
+    p.add_argument("--db", required=True)
+    p.add_argument("--volume", dest="volume_id")
+    p.set_defaults(func=cmd_editions)
+
+    p = sub.add_parser("show-edition", help="dump one edition with all slots")
+    p.add_argument("--db", required=True)
+    p.add_argument("--edition", dest="edition_id", required=True)
+    p.set_defaults(func=cmd_show_edition)
+
+    p = sub.add_parser("locate-page", help="sheet/side/slot of one page in an edition")
+    p.add_argument("--db", required=True)
+    p.add_argument("--edition", dest="edition_id", required=True)
+    p.add_argument("--page", dest="page_id", required=True)
+    p.set_defaults(func=cmd_locate_page)
+
+    p = sub.add_parser("export-edition", help="write a signature-edition/1 document")
+    p.add_argument("--db", required=True)
+    p.add_argument("--edition", dest="edition_id", required=True)
+    p.add_argument("--out", required=True)
+    p.set_defaults(func=cmd_export_edition)
+
+    p = sub.add_parser("plan-press", help="solve and sign an errata work order")
+    p.add_argument("--db", required=True)
+    p.add_argument("--order", required=True)
+    p.add_argument("--out", required=True)
+    p.set_defaults(func=cmd_plan_press)
+
+    p = sub.add_parser("replay-plan", help="offline replay of a signed press plan")
+    p.add_argument("--plan", required=True)
+    p.add_argument("--edition", required=True)
+    p.set_defaults(func=cmd_replay_plan)
     return parser
 
 

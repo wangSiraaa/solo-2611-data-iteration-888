@@ -6,6 +6,10 @@
 只提供输入与只读客户端时也能完整运行：`materials/726/` 下的
 `pages.json`、`references.jsonl`、`operations.jsonl` 是全部初始数据。
 
+再版工作室扩展：在冻结目录之上提供**书帖版**（`signature-edition/1`）与
+**勘误工单/开机计划**（`errata-work-order/1` → `press-plan/1`），见下文
+对应章节。原 PINNED、RANGE 与 `citation-product/1` 的用法不变。
+
 ## 快速开始
 
 ```bash
@@ -101,8 +105,68 @@ C_RANGE usable V1/p2,V1/p3,V1/p4 -
 - 写出前用 `validate_products` 校验合同；两文件先写临时文件再 `os.replace`，
   单个文件不会半写。若需两文件成对切换，请以**整个导出目录**为单位发布。
 
-## 依赖索引（`citation_system/dependency.py`，可选）
+## 书帖版（`citation_system/imposition.py`）
 
+书帖版把**一卷的一次完整目录修订**冻结成可开机的版面：
+
+- 建版时取该卷**在用页**按物理次序，每 4 页或 8 页起一个独立书帖，
+  末帖尾部补空位；空位是真空格位（`page_id: null`），**不伪造页**。
+- 一帖 N 个位置中，第 i 张纸（从外向内，`0 ≤ i < N/4`）正面印
+  `(N−2i, 1+2i)`，背面印 `(2+2i, N−1−2i)`。八页一帖时 p2、p7 因此同在
+  外纸背面（`sig0/sheet0/back`）。每个**纸面**含两个**格位**，稳定名为
+  `sig{k}/sheet{i}/{front|back}`。
+- 位置映回原卷稳定页 ID 与所绑定的 `catalog_revision`；版成之后目录再变
+  （插页/移位/停用）都不改写旧版。`--expected-revision` 与当前修订不一致
+  时整版不建（`catalog_revision_mismatch`），保证绑的是一次完整修订。
+- 新版可改帖长（4↔8）或绑定另一（更晚的）目录修订；旧版始终可查、可
+  **复印**：`copy-edition` 复制同一冻结版面到新版号，`layout_digest` 相同。
+- `locate-page` 独立给出某页的纸、面、格位；`export-edition` 产出
+  自包含的 `signature-edition/1` 文档（含全部格位与空位），供离线复读。
+
+## 勘误工单与开机计划（`citation_system/press.py`）
+
+印厂按校样轮次开机。工单（`errata-work-order/1`）给出校样版号、架位容量、
+初始在架表、各面标定装版工时、保留令和逐轮摘录组：
+
+- 每轮的摘录组按 `citation-product/1` 的语义**整组解析**（同一快照）；
+  任一摘录待处理/不存在，或用到的页不在校样版内，该轮即不可完成。
+  解析成功的组把实际用到的页映成**所需纸面**；同一面只占一个架位。
+- 已装的面可跨轮留架（免费）；轮后可撤下未被保留令钉住的面；保留令
+  指定某面 `[from_round, to_round]` 全程在架。初装与重装都按该面标定
+  工时收费。
+- 精确子集 DP 求**最小总装版工时**（装早不会更省，故最优计划只在
+  需要时装所需面；同费时倾向迟撤，确定性可复现）。无解时给出**首个
+  不可完成轮**及原因（`capacity_exceeded` / `pinned_inactive_member` /
+  `range_endpoint_inactive` / `range_endpoints_reversed` /
+  `citation_not_found` / `page_not_in_edition`）。
+- 单班上界：14 面、4 架位、40 轮（超出报 `shift_limits_exceeded`；
+  该规模下求解约毫秒级）。
+- 签署计划（`press-plan/1`）记录校样版绑定、初始在架、保留令、逐轮
+  在架/装拆与费用依据，并附 sha256 `plan_digest`。配合导出的
+  `signature-edition/1`，`replay-plan` **完全离线**复读：重推各轮所需
+  纸面、模拟装拆与容量/保留令、重算最优费用并校验摘要——现场只带走
+  当班材料即可执行；旧计划在目录继续变动后仍可按交付文件复查。
+
+```bash
+python3 -m citation_system make-edition --db work/cli_run/catalog.db \
+    --volume V1 --signature-size 8 --edition-id ED1
+python3 -m citation_system export-edition --db work/cli_run/catalog.db \
+    --edition ED1 --out exports/press/ED1.signature-edition.json
+python3 -m citation_system plan-press --db work/cli_run/catalog.db \
+    --order order.json --out exports/press/WO-1.press-plan.json
+python3 -m citation_system replay-plan \
+    --plan exports/press/WO-1.press-plan.json \
+    --edition exports/press/ED1.signature-edition.json   # 不需要数据库
+```
+
+完整演示（含题目全部算例：p2/p7 同面、p6/p7 互换后容量 1 无解/2 位费 2、
+A-B-C-A 无保留令 7、加保留令 12、补空、范围端停用、复印与旧计划复查）：
+
+```bash
+python3 scripts/demo_press.py   # 交付物写入 exports/press/
+```
+
+## 依赖索引（`citation_system/dependency.py`，可选）
 - 目的：加速"某实际页被哪些引用覆盖"。
 - 表 `page_citation_dependency(volume_id, page_id, citation_id, role)`。
 - **从不用于导出**，只用于查询，所以索引陈旧不会污染产品。
@@ -130,12 +194,15 @@ C_RANGE usable V1/p2,V1/p3,V1/p4 -
 ## 布局
 
 ```
-citation_system/   实现源码（catalog / repository / export / dependency / cli）
-tests/             52 个单元与集成测试（含随机不变量与目标规模）
+citation_system/   实现源码（catalog / repository / export / dependency /
+                   imposition / press / cli）
+tests/             89 个单元与集成测试（含随机不变量与目标规模）
 scripts/demo_726.py        端到端展示，逐步保留旧导出
+scripts/demo_press.py      书帖版 + 勘误工单算例演示，交付物可离线复读
 scripts/benchmark_726.py   目标规模基准
 exports/scenario/  演示产生的各步骤导出（旧目录保留）
 exports/cli_run/   按 materials 原始输入走完整 CLI 的导出
+exports/press/     书帖版文档与签署开机计划（可离线复读）
 work/              运行的 SQLite 数据库
 ```
 

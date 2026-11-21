@@ -1,0 +1,64 @@
+{
+  "capacity": 1,
+  "edition_catalog_revision": 1,
+  "edition_id": "ED1",
+  "edition_layout_digest": "sha256:8645de61fbcf6019a8917ddac412fc04ab36a149e460fdee6f4e58c1c7362147",
+  "first_infeasible_round": 2,
+  "format": "press-plan/1",
+  "infeasible": {
+    "detail": {
+      "citation_id": "C_SPAN"
+    },
+    "reason": "range_endpoint_inactive",
+    "round": 2
+  },
+  "initial_rack": [],
+  "mount_costs": {
+    "sig0/sheet0/back": 1,
+    "sig0/sheet0/front": 1,
+    "sig0/sheet1/back": 1,
+    "sig0/sheet1/front": 1
+  },
+  "order_id": "WO-6",
+  "plan_digest": "sha256:18c673516922708e6ade22995ae492b589004599ad1febf652342e914bfb0917",
+  "planned_at_catalog_revision": 2,
+  "retentions": [],
+  "rounds": [
+    {
+      "citations": [
+        "C_A1"
+      ],
+      "resolution": {
+        "pages": [
+          {
+            "page_id": "p2",
+            "volume_id": "BOOK"
+          }
+        ],
+        "required_sides": [
+          "sig0/sheet0/back"
+        ],
+        "status": "ok"
+      },
+      "retained_sides": [],
+      "round": 1
+    },
+    {
+      "citations": [
+        "C_SPAN"
+      ],
+      "resolution": {
+        "detail": {
+          "citation_id": "C_SPAN"
+        },
+        "reason": "range_endpoint_inactive",
+        "status": "failed"
+      },
+      "retained_sides": [],
+      "round": 2
+    }
+  ],
+  "status": "infeasible",
+  "total_cost": null,
+  "volume_id": "BOOK"
+}

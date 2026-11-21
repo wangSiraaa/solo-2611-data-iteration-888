@@ -54,6 +54,19 @@ INVALID_CITATION = "invalid_citation"
 DUPLICATE_PINNED_MEMBER = "duplicate_pinned_member"
 CROSS_VOLUME_REFERENCE = "cross_volume_reference"
 
+# Signature edition (书帖版) errors
+EDITION_EXISTS = "edition_exists"
+EDITION_NOT_FOUND = "edition_not_found"
+INVALID_SIGNATURE_SIZE = "invalid_signature_size"
+CATALOG_REVISION_MISMATCH = "catalog_revision_mismatch"
+PAGE_NOT_IN_EDITION = "page_not_in_edition"
+
+# Errata work order / press plan errors
+INVALID_WORK_ORDER = "invalid_work_order"
+INVALID_SIDE_ID = "invalid_side_id"
+MISSING_MOUNT_COST = "missing_mount_cost"
+SHIFT_LIMITS_EXCEEDED = "shift_limits_exceeded"
+
 
 class OperationRejected(CitationSystemError):
     """A whole operation request (batch) was rejected before any write."""
@@ -61,3 +74,11 @@ class OperationRejected(CitationSystemError):
 
 class ReferenceCreationError(CitationSystemError):
     """A citation could not be created; no citation was written."""
+
+
+class EditionError(CitationSystemError):
+    """A signature edition could not be created, copied or queried."""
+
+
+class WorkOrderError(CitationSystemError):
+    """An errata work order is malformed or exceeds the shift limits."""

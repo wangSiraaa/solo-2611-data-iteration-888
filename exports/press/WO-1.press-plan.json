@@ -1,0 +1,62 @@
+{
+  "capacity": 1,
+  "edition_catalog_revision": 1,
+  "edition_id": "ED1",
+  "edition_layout_digest": "sha256:8645de61fbcf6019a8917ddac412fc04ab36a149e460fdee6f4e58c1c7362147",
+  "first_infeasible_round": null,
+  "format": "press-plan/1",
+  "infeasible": null,
+  "initial_rack": [],
+  "mount_costs": {
+    "sig0/sheet0/back": 1,
+    "sig0/sheet0/front": 1,
+    "sig0/sheet1/back": 1,
+    "sig0/sheet1/front": 1
+  },
+  "order_id": "WO-1",
+  "plan_digest": "sha256:3b31752ac72b9fc3b0c911c990e40a0baef9828f12c9df1e71ff015cbd741f39",
+  "planned_at_catalog_revision": 1,
+  "retentions": [],
+  "rounds": [
+    {
+      "citations": [
+        "C_OUTER"
+      ],
+      "cumulative_cost": 1,
+      "mounted": [
+        {
+          "cost": 1,
+          "side": "sig0/sheet0/back"
+        }
+      ],
+      "on_rack": [
+        "sig0/sheet0/back"
+      ],
+      "resolution": {
+        "pages": [
+          {
+            "page_id": "p2",
+            "volume_id": "BOOK"
+          },
+          {
+            "page_id": "p7",
+            "volume_id": "BOOK"
+          }
+        ],
+        "required_sides": [
+          "sig0/sheet0/back"
+        ],
+        "status": "ok"
+      },
+      "retained_sides": [],
+      "round": 1,
+      "round_cost": 1,
+      "unmounted_after": [
+        "sig0/sheet0/back"
+      ]
+    }
+  ],
+  "status": "feasible",
+  "total_cost": 1,
+  "volume_id": "BOOK"
+}
